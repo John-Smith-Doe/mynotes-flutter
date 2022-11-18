@@ -42,13 +42,12 @@ class NotesService {
     } on CouldNotFindUser {
       final createdUser = await createUser(email: email);
       log.i('createUser is $createdUser');
-
       return createdUser;
     } catch (e) {
+      log.i('landed in catch e');
+      log.e(e);
       // catch any exception, so you can make a breakpoint for debuging,
       // to see if any exception can happen here
-      final createdUser = await createUser(email: email);
-      log.i('createUser is $createdUser');
       rethrow;
     }
   }
