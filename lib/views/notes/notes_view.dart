@@ -4,6 +4,7 @@ import 'package:notes_app/constants/routes.dart';
 import 'package:notes_app/services/crud/notes_service.dart';
 import 'package:notes_app/services/logging.dart';
 import 'package:notes_app/utilities/dialogs/logout_dialog.dart';
+import 'package:notes_app/views/notes/create_update_note_view.dart';
 import 'package:notes_app/views/notes/notes_list_view.dart';
 import 'dart:developer' as devtools show log;
 import '../../enums/menu_action.dart';
@@ -43,7 +44,7 @@ class _NotesViewState extends State<NotesView> {
         actions: [
           IconButton(
               onPressed: () {
-                Navigator.of(context).pushNamed(newNoteRoute);
+                Navigator.of(context).pushNamed(createOrUpdateNoteRoute);
               },
               icon: const Icon(Icons.add)),
           PopupMenuButton<MenuAction>(
@@ -85,6 +86,12 @@ class _NotesViewState extends State<NotesView> {
                       if (snapshot.hasData) {
                         final allNotes = snapshot.data as List<DatabaseNote>;
                         return NotesListView(
+                          onTap: (note) {
+                            Navigator.of(context).pushNamed(
+                              createOrUpdateNoteRoute,
+                              arguments: note,
+                            );
+                          },
                           notes: allNotes,
                           onDeleteNote: (note) async {
                             await _notesService.deleteNote(id: note.id);
