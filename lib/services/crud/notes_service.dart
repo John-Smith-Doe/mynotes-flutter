@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
+import 'package:logger/logger.dart';
+import 'package:notes_app/services/logging.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart';
@@ -9,6 +11,7 @@ import 'package:path/path.dart';
 import 'crud_exceptions.dart';
 
 class NotesService {
+  var log = logger(NotesService);
   Database? _db;
 
   //cache
@@ -16,25 +19,36 @@ class NotesService {
 
   //make a singelton, so we can have the NoteseService only once in the app
   static final NotesService _shared = NotesService._sharedInstance();
-  NotesService._sharedInstance();
+  NotesService._sharedInstance() {
+    _notesStreamController = StreamController<List<DatabaseNote>>.broadcast(
+      onListen: () {
+        _notesStreamController.sink.add(_notes);
+      },
+    );
+  }
   factory NotesService() => _shared;
 
-  final _notesStreamController =
-      StreamController<List<DatabaseNote>>.broadcast();
+  late final StreamController<List<DatabaseNote>> _notesStreamController;
 
   //get all notes
   Stream<List<DatabaseNote>> get allNotes => _notesStreamController.stream;
 
   Future<DatabaseUser> getOrCreateUser({required String email}) async {
+    log.i('getOrCreateUser function is called');
+
     try {
       final user = await getUser(email: email);
       return user;
     } on CouldNotFindUser {
       final createdUser = await createUser(email: email);
+      log.i('createUser is $createdUser');
+
       return createdUser;
     } catch (e) {
       // catch any exception, so you can make a breakpoint for debuging,
       // to see if any exception can happen here
+      final createdUser = await createUser(email: email);
+      log.i('createUser is $createdUser');
       rethrow;
     }
   }
@@ -131,15 +145,19 @@ class NotesService {
   }
 
   Future<DatabaseNote> createNote({required DatabaseUser owner}) async {
+    log.i('CreateNote function is called');
     await _ensureDbIsOpen();
     final db = _getDatabaseOrThrow();
 
     //make sure the owner exists in the database with the correct id
     final dbUser = await getUser(email: owner.email);
+    log.i('dbUser is $dbUser');
+
     if (dbUser != owner) {
       throw CouldNotFindUser();
     }
     const text = '';
+    log.e('Db is $db');
 
     //create the note
     final noteId = await db.insert(notesTable, {
@@ -160,6 +178,7 @@ class NotesService {
   }
 
   Future<DatabaseUser> getUser({required String email}) async {
+    log.i('getUser function is called');
     await _ensureDbIsOpen();
     final db = _getDatabaseOrThrow();
     final results = await db.query(
@@ -168,6 +187,7 @@ class NotesService {
       where: 'email = ?',
       whereArgs: [email.toLowerCase()],
     );
+    log.i('results: $results');
     if (results.isEmpty) {
       throw CouldNotFindUser;
     } else {
@@ -176,7 +196,9 @@ class NotesService {
   }
 
   Future<DatabaseUser> createUser({required String email}) async {
+    log.i('createUser function is called');
     await _ensureDbIsOpen();
+
     final db = _getDatabaseOrThrow();
     final results = await db.query(
       userTable,
@@ -239,6 +261,7 @@ class NotesService {
       final dbPath = join(docsPath.path, dbName);
       final db = await openDatabase(dbPath);
       _db = db;
+      log.i('Db is $db');
       await db.execute(createUserTable);
       await db.execute(createNoteTable);
       await _cacheNotes();
@@ -321,7 +344,7 @@ const createNoteTable = '''
         "id"	INTEGER NOT NULL,
         "user_id"	INTEGER NOT NULL,
         "text"	TEXT,
-        "is_synced_with_clooud"	INTEGER NOT NULL DEFAULT 0,
+        "is_synced_with_cloud"	INTEGER NOT NULL DEFAULT 0,
         PRIMARY KEY("id" AUTOINCREMENT),
         FOREIGN KEY("user_id") REFERENCES "user"("id")
       );

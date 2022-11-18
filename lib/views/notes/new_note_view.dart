@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:notes_app/services/auth/auth_service.dart';
 import 'package:notes_app/services/crud/notes_service.dart';
+import 'package:notes_app/services/logging.dart';
 
 class NewNoteView extends StatefulWidget {
   const NewNoteView({super.key});
@@ -10,6 +11,7 @@ class NewNoteView extends StatefulWidget {
 }
 
 class _NewNotesViewState extends State<NewNoteView> {
+  var log = logger(NewNoteView);
   //Keep hold of our current note view
   //otherwise new note will be created every time we hot reload
   DatabaseNote? _note;
@@ -48,15 +50,23 @@ class _NewNotesViewState extends State<NewNoteView> {
 
   //create new note
   Future<DatabaseNote> createNewNote() async {
+    log.i('createNewNote funciton is called');
     //have we create the note before
     final existingNote = _note;
     if (existingNote != null) {
+      log.i('existingNote is not null');
+
       return existingNote;
+    } else {
+      final currentUser = AuthService.firebase().currentUser!;
+      log.i('currentUser: $currentUser');
+      final email = currentUser.email!;
+      log.i('email: $email');
+      final owner = await _notesService.getUser(email: email);
+      log.i('owner: $owner');
+
+      return await _notesService.createNote(owner: owner);
     }
-    final currentUser = AuthService.firebase().currentUser!;
-    final email = currentUser.email!;
-    final owner = await _notesService.getUser(email: email);
-    return await _notesService.createNote(owner: owner);
   }
 
   //If the note is empty, and user goes back, delete the note
@@ -72,7 +82,10 @@ class _NewNotesViewState extends State<NewNoteView> {
     final note = _note;
     final text = _textEditingController.text;
     if (text.isNotEmpty && note != null) {
-      await _notesService.updateNote(note: note, text: text);
+      await _notesService.updateNote(
+        note: note,
+        text: text,
+      );
     }
   }
 
@@ -85,6 +98,7 @@ class _NewNotesViewState extends State<NewNoteView> {
     super.dispose();
   }
 
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -97,13 +111,16 @@ class _NewNotesViewState extends State<NewNoteView> {
         builder: (context, snapshot) {
           switch (snapshot.connectionState) {
             case ConnectionState.done:
-              _note = snapshot.data;
+              _note = snapshot.data as DatabaseNote?;
               _setupTextControllerListener();
               return TextField(
                 controller: _textEditingController,
                 keyboardType: TextInputType.multiline,
                 //give the textfield unlimited lines so it expends
                 maxLines: null,
+                decoration: const InputDecoration(
+                  hintText: 'Start typing your note...',
+                ),
               );
             default:
               return const CircularProgressIndicator();
