@@ -204,7 +204,8 @@ class NotesService {
     );
     log.i('results: $results');
     if (results.isEmpty) {
-      throw CouldNotFindUser;
+      log.i('CouldNotFindUser error will be thrown');
+      throw CouldNotFindUser();
     } else {
       return DatabaseUser.fromRow(results.first);
     }
