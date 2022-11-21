@@ -620,11 +620,11 @@ PODS:
   - Firebase/Firestore (10.2.0):
     - Firebase/CoreOnly
     - FirebaseFirestore (~> 10.2.0)
-  - firebase_analytics (10.0.4):
+  - firebase_analytics (10.0.6):
     - Firebase/Analytics (= 10.2.0)
     - firebase_core
     - Flutter
-  - firebase_auth (4.1.1):
+  - firebase_auth (4.1.3):
     - Firebase/Auth (= 10.2.0)
     - firebase_core
     - Flutter
@@ -788,6 +788,8 @@ PODS:
   - path_provider_ios (0.0.1):
     - Flutter
   - PromisesObjC (2.1.1)
+  - share_plus (0.0.1):
+    - Flutter
   - sqflite (0.0.2):
     - Flutter
     - FMDB (>= 2.7.5)
@@ -799,6 +801,7 @@ DEPENDENCIES:
   - firebase_core (from `.symlinks/plugins/firebase_core/ios`)
   - Flutter (from `Flutter`)
   - path_provider_ios (from `.symlinks/plugins/path_provider_ios/ios`)
+  - share_plus (from `.symlinks/plugins/share_plus/ios`)
   - sqflite (from `.symlinks/plugins/sqflite/ios`)
 
 SPEC REPOS:
@@ -836,6 +839,8 @@ EXTERNAL SOURCES:
     :path: Flutter
   path_provider_ios:
     :path: ".symlinks/plugins/path_provider_ios/ios"
+  share_plus:
+    :path: ".symlinks/plugins/share_plus/ios"
   sqflite:
     :path: ".symlinks/plugins/sqflite/ios"
 
@@ -844,8 +849,8 @@ SPEC CHECKSUMS:
   BoringSSL-GRPC: 3175b25143e648463a56daeaaa499c6cb86dad33
   cloud_firestore: 14451f06cca99dbd56b069624621063150fef3e5
   Firebase: a3ea7eba4382afd83808376edb99acdaff078dcf
-  firebase_analytics: ff30f84ee2c3eb0aa08f96c20a698fce1875aeb1
-  firebase_auth: a2dbff523229800f76645555ee6b1e9453883523
+  firebase_analytics: f58660932fa1d373ced20b098ada23fe0ed1f55b
+  firebase_auth: dc7124acfe6adb5823dcc4f3063c6b5ab6f92428
   firebase_core: db1432de826785171029b7c1a26e5b22ce1dd477
   FirebaseAnalytics: 24a15e58e505abcedc3017b6f7c206fbfa964580
   FirebaseAuth: 08e7739244eeae5216d0a3f8d9f16a76be9c252e
@@ -865,6 +870,7 @@ SPEC CHECKSUMS:
   nanopb: b552cce312b6c8484180ef47159bc0f65a1f0431
   path_provider_ios: 14f3d2fd28c4fdb42f44e0f751d12861c43cee02
   PromisesObjC: ab77feca74fa2823e7af4249b8326368e61014cb
+  share_plus: 056a1e8ac890df3e33cb503afffaf1e9b4fbae68
   sqflite: 6d358c025f5b867b29ed92fc697fd34924e11904
 
 PODFILE CHECKSUM: ef19549a9bc3046e7bb7d2fab4d021637c0c58a3
