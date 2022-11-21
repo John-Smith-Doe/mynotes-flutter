@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:notes_app/services/auth/auth_service.dart';
-import 'package:notes_app/services/crud/notes_service.dart';
+import 'package:notes_app/services/cloud/firebase_cloud_storage.dart';
 import 'package:notes_app/services/logging.dart';
 import 'package:notes_app/utilities/generics/get_arguments.dart';
+import 'package:notes_app/services/cloud/cloud_note.dart';
+import 'package:notes_app/services/cloud/cloud_storage_exception.dart';
 
 class CreateUpdateNoteView extends StatefulWidget {
   const CreateUpdateNoteView({super.key});
@@ -12,19 +14,19 @@ class CreateUpdateNoteView extends StatefulWidget {
 }
 
 class _NewNotesViewState extends State<CreateUpdateNoteView> {
-  var log = logger(CreateUpdateNoteView);
+  var log = logger(_NewNotesViewState);
   //Keep hold of our current note view
   //otherwise new note will be created every time we hot reload
-  DatabaseNote? _note;
+  CloudNote? _note;
   //keep refrence to NoteService to not call over and over the singelton to noteservice
-  late final NotesService _notesService;
+  late final FirebaseCloudStorage _notesService;
   //keep track of text changes
   late final TextEditingController _textEditingController;
 
   @override
   void initState() {
     //NotesService is a singeltone and will not create again wich is a good thing
-    _notesService = NotesService();
+    _notesService = FirebaseCloudStorage();
     _textEditingController = TextEditingController();
     super.initState();
   }
@@ -37,7 +39,7 @@ class _NewNotesViewState extends State<CreateUpdateNoteView> {
     }
     final text = _textEditingController.text;
     await _notesService.updateNote(
-      note: note,
+      documentId: note.documentId,
       text: text,
     );
   }
@@ -50,11 +52,11 @@ class _NewNotesViewState extends State<CreateUpdateNoteView> {
   }
 
   //create new note
-  Future<DatabaseNote> createOrGetExistingNote(BuildContext context) async {
+  Future<CloudNote> createOrGetExistingNote(BuildContext context) async {
     log.i('createNewNote funciton is called');
 
     //get existing notes if any exist
-    final widgetNote = context.getArgument<DatabaseNote>();
+    final widgetNote = context.getArgument<CloudNote>();
     if (widgetNote != null) {
       _note = widgetNote;
       _textEditingController.text = widgetNote.text;
@@ -71,9 +73,8 @@ class _NewNotesViewState extends State<CreateUpdateNoteView> {
       log.i('currentUser: $currentUser');
       final email = currentUser.email;
       log.i('email: $email');
-      final owner = await _notesService.getUser(email: email);
-      log.i('owner: $owner');
-      final newNote = await _notesService.createNote(owner: owner);
+      final userId = currentUser.id;
+      final newNote = await _notesService.createNewNote(ownerUserId: userId);
       _note = newNote;
       return newNote;
     }
@@ -83,7 +84,7 @@ class _NewNotesViewState extends State<CreateUpdateNoteView> {
   void _deleteNoteIfTextIsEmpty() {
     final note = _note;
     if (_textEditingController.text.isEmpty && note != null) {
-      _notesService.deleteNote(id: note.id);
+      _notesService.deleteNote(documentId: note.documentId);
     }
   }
 
@@ -93,7 +94,7 @@ class _NewNotesViewState extends State<CreateUpdateNoteView> {
     final text = _textEditingController.text;
     if (text.isNotEmpty && note != null) {
       await _notesService.updateNote(
-        note: note,
+        documentId: note.documentId,
         text: text,
       );
     }
