@@ -1,8 +1,10 @@
-import 'package:bloc/bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:notes_app/constants/routes.dart';
-import 'package:notes_app/services/auth/auth_service.dart';
+import 'package:notes_app/services/auth/bloc/auth_bloc.dart';
+import 'package:notes_app/services/auth/bloc/auth_event.dart';
+import 'package:notes_app/services/auth/bloc/auth_state.dart';
+import 'package:notes_app/services/auth/firebase_auth_provider.dart';
 import 'package:notes_app/views/login_view.dart';
 import 'package:notes_app/views/notes/create_update_note_view.dart';
 import 'package:notes_app/views/notes/notes_view.dart';
@@ -17,7 +19,10 @@ void main() {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const HomePage(),
+      home: BlocProvider<AuthBloc>(
+        create: (context) => AuthBloc(FirebaseAuthProvider()),
+        child: const HomePage(),
+      ),
       routes: {
         loginRoute: (context) => const LoginView(),
         registerRoute: (context) => const RegisterView(),
@@ -29,11 +34,31 @@ void main() {
   );
 }
 
-// class HomePage extends StatelessWidget {
-//   const HomePage({super.key});
+class HomePage extends StatelessWidget {
+  const HomePage({super.key});
 
-//   @override
-//   Widget build(BuildContext context) {
+  @override
+  Widget build(BuildContext context) {
+    context.read<AuthBloc>().add(const AuthEventInitialize());
+    return BlocBuilder<AuthBloc, AuthState>(
+      builder: (context, state) {
+        if (state is AuthStateLoggedIn) {
+          return const NotesView();
+        } else if (state is AuthStateNeedsVerification) {
+          return const VerifyEmailView();
+        } else if (state is AuthStateLoggedOut) {
+          return const LoginView();
+        } else {
+          return const Scaffold(
+            body: CircularProgressIndicator(),
+          );
+        }
+      },
+    );
+  }
+}
+
+// **** BEFORE WE ADDED BLOC ****
 //     return FutureBuilder(
 //       future: AuthService.firebase().initialize(),
 //       builder: (context, snapshot) {
@@ -57,145 +82,150 @@ void main() {
 //     );
 //   }
 // }
+// **** BEFORE WE ADDED BLOC ****
 
-class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+//******************** ´
 
-  @override
-  State<HomePage> createState() => _HomePageState();
-}
+// **** LEARNING BLOC PATTERN - SMALL APP ****
+// class HomePage extends StatefulWidget {
+//   const HomePage({super.key});
 
-class _HomePageState extends State<HomePage> {
-  late final TextEditingController _controller;
+//   @override
+//   State<HomePage> createState() => _HomePageState();
+// }
 
-  @override
-  void initState() {
-    _controller = TextEditingController();
-    super.initState();
-  }
+// class _HomePageState extends State<HomePage> {
+//   late final TextEditingController _controller;
 
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
+//   @override
+//   void initState() {
+//     _controller = TextEditingController();
+//     super.initState();
+//   }
 
-  @override
-  Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => CounterBloc(),
-      child: Scaffold(
-        appBar: AppBar(title: const Text('testing bloc')),
-        body: BlocConsumer<CounterBloc, CounterState>(
-          listener: (context, state) {
-            _controller.clear();
-          },
-          builder: (context, state) {
-            final invalidValue =
-                (state is CounterStateInvalidNumber) ? state.invalidValue : '';
-            return Column(
-              children: [
-                Text('Current value => ${state.value}'),
-                Visibility(
-                  visible: state is CounterStateInvalidNumber,
-                  child: Text('Invalid input: $invalidValue'),
-                ),
-                TextField(
-                  controller: _controller,
-                  decoration: const InputDecoration(
-                    hintText: 'Enter a number here',
-                  ),
-                  keyboardType: TextInputType.number,
-                ),
-                Row(
-                  children: [
-                    TextButton(
-                      onPressed: () {
-                        context
-                            .read<CounterBloc>()
-                            .add(DecrementEvent(_controller.text));
-                      },
-                      child: const Text('-'),
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        context
-                            .read<CounterBloc>()
-                            .add(IncrementEvent(_controller.text));
-                      },
-                      child: const Text('+'),
-                    ),
-                  ],
-                )
-              ],
-            );
-          },
-        ),
-      ),
-    );
-  }
-}
+//   @override
+//   void dispose() {
+//     _controller.dispose();
+//     super.dispose();
+//   }
 
-@immutable
-abstract class CounterState {
-  final int value;
-  const CounterState(this.value);
-}
+//   @override
+//   Widget build(BuildContext context) {
+//     return BlocProvider(
+//       create: (context) => CounterBloc(),
+//       child: Scaffold(
+//         appBar: AppBar(title: const Text('testing bloc')),
+//         body: BlocConsumer<CounterBloc, CounterState>(
+//           listener: (context, state) {
+//             _controller.clear();
+//           },
+//           builder: (context, state) {
+//             final invalidValue =
+//                 (state is CounterStateInvalidNumber) ? state.invalidValue : '';
+//             return Column(
+//               children: [
+//                 Text('Current value => ${state.value}'),
+//                 Visibility(
+//                   visible: state is CounterStateInvalidNumber,
+//                   child: Text('Invalid input: $invalidValue'),
+//                 ),
+//                 TextField(
+//                   controller: _controller,
+//                   decoration: const InputDecoration(
+//                     hintText: 'Enter a number here',
+//                   ),
+//                   keyboardType: TextInputType.number,
+//                 ),
+//                 Row(
+//                   children: [
+//                     TextButton(
+//                       onPressed: () {
+//                         context
+//                             .read<CounterBloc>()
+//                             .add(DecrementEvent(_controller.text));
+//                       },
+//                       child: const Text('-'),
+//                     ),
+//                     TextButton(
+//                       onPressed: () {
+//                         context
+//                             .read<CounterBloc>()
+//                             .add(IncrementEvent(_controller.text));
+//                       },
+//                       child: const Text('+'),
+//                     ),
+//                   ],
+//                 )
+//               ],
+//             );
+//           },
+//         ),
+//       ),
+//     );
+//   }
+// }
 
-class CounterStateValid extends CounterState {
-  const CounterStateValid(int value) : super(value);
-}
+// @immutable
+// abstract class CounterState {
+//   final int value;
+//   const CounterState(this.value);
+// }
 
-class CounterStateInvalidNumber extends CounterState {
-  final String invalidValue;
+// class CounterStateValid extends CounterState {
+//   const CounterStateValid(int value) : super(value);
+// }
 
-  const CounterStateInvalidNumber({
-    required this.invalidValue,
-    required int previousValue,
-  }) : super(previousValue);
-}
+// class CounterStateInvalidNumber extends CounterState {
+//   final String invalidValue;
 
-@immutable
-abstract class CounterEvent {
-  final String value;
-  const CounterEvent(this.value);
-}
+//   const CounterStateInvalidNumber({
+//     required this.invalidValue,
+//     required int previousValue,
+//   }) : super(previousValue);
+// }
 
-class IncrementEvent extends CounterEvent {
-  const IncrementEvent(String value) : super(value);
-}
+// @immutable
+// abstract class CounterEvent {
+//   final String value;
+//   const CounterEvent(this.value);
+// }
 
-class DecrementEvent extends CounterEvent {
-  const DecrementEvent(String value) : super(value);
-}
+// class IncrementEvent extends CounterEvent {
+//   const IncrementEvent(String value) : super(value);
+// }
 
-class CounterBloc extends Bloc<CounterEvent, CounterState> {
-  CounterBloc() : super(const CounterStateValid(0)) {
-    on<IncrementEvent>((event, emit) {
-      final integer = int.tryParse(event.value);
-      if (integer == null) {
-        emit(
-          CounterStateInvalidNumber(
-            invalidValue: event.value,
-            previousValue: state.value,
-          ),
-        );
-      } else {
-        emit(CounterStateValid(state.value + integer));
-      }
-    });
-    on<DecrementEvent>((event, emit) {
-      final integer = int.tryParse(event.value);
-      if (integer == null) {
-        emit(
-          CounterStateInvalidNumber(
-            invalidValue: event.value,
-            previousValue: state.value,
-          ),
-        );
-      } else {
-        emit(CounterStateValid(state.value - integer));
-      }
-    });
-  }
-}
+// class DecrementEvent extends CounterEvent {
+//   const DecrementEvent(String value) : super(value);
+// }
+
+// class CounterBloc extends Bloc<CounterEvent, CounterState> {
+//   CounterBloc() : super(const CounterStateValid(0)) {
+//     on<IncrementEvent>((event, emit) {
+//       final integer = int.tryParse(event.value);
+//       if (integer == null) {
+//         emit(
+//           CounterStateInvalidNumber(
+//             invalidValue: event.value,
+//             previousValue: state.value,
+//           ),
+//         );
+//       } else {
+//         emit(CounterStateValid(state.value + integer));
+//       }
+//     });
+//     on<DecrementEvent>((event, emit) {
+//       final integer = int.tryParse(event.value);
+//       if (integer == null) {
+//         emit(
+//           CounterStateInvalidNumber(
+//             invalidValue: event.value,
+//             previousValue: state.value,
+//           ),
+//         );
+//       } else {
+//         emit(CounterStateValid(state.value - integer));
+//       }
+//     });
+//   }
+// }
+// **** LEARNING BLOC PATTERN - SMALL APP ****
